@@ -2,9 +2,30 @@ import pandas as pd
 import numpy as np
 
 df = pd.DataFrame(
-    np.random.randint(0, 10, (2000, 3)), columns=["Pickup_long", "Pickup_lat", "C"]
+    np.random.randint(0, 2, (10, 5)),
+    columns=["Pickup_long", "Pickup_lat", "A", "B", "C"],
 )
 print(df)
+
+
+def hardcode_setNaN(df, freq_cols, threshold):
+    frequencies = df[freq_cols].value_counts()
+    print(frequencies)
+    condition = frequencies < threshold  # you can define it however you want
+    mask_obs = frequencies[condition].index
+    (a_vals, b_vals) = zip(*mask_obs)
+
+    index = df.loc[df["A"].isin(a_vals) & df["B"].isin(b_vals)].index
+    df.loc[index, ~df.columns.isin(freq_cols)] = np.nan
+
+
+freq_cols = ["Pickup_long", "Pickup_lat"]
+threshold = 5
+
+hardcode_setNaN(df, freq_cols, threshold)
+print(df)
+
+import functools
 
 
 def setNaN(df, freq_cols, threshold):
@@ -12,16 +33,24 @@ def setNaN(df, freq_cols, threshold):
     print(frequencies)
     condition = frequencies < threshold  # you can define it however you want
     mask_obs = frequencies[condition].index
-    a_vals, b_vals = zip(*mask_obs)
+    (a_vals, b_vals, c_vals) = zip(*mask_obs)
+    vals = zip(*mask_obs)
+
+    zip_iterator = zip(freq_cols, vals)
+
+    cond_dict = dict(zip_iterator)
+
+    test = df["Pickup_long"].isin(a_vals)
+
+    cond_list = []
+    for key, values in cond_dict.items():
+        cond_list.append(df[[key]].isin(values))
+    all_conds = functools.reduce(lambda x, y: x & y, cond_list)
+
+    idx = df.loc(all_conds).index
+
     index = df.loc[df["A"].isin(a_vals) & df["B"].isin(b_vals)].index
     df.loc[index, ~df.columns.isin(freq_cols)] = np.nan
-
-
-freq_cols = ["Pickup_long", "Pickup_lat"]
-threshold = 2
-
-setNaN(df, freq_cols, threshold)
-print(df)
 
 
 def mask(df, size, columns):
