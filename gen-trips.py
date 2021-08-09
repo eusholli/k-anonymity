@@ -5,7 +5,7 @@ fake = Faker()
 Faker.seed(4321)
 
 # df = pd.read_csv('trips.csv', dtype=str, nrows=1000)
-df = pd.read_csv("trips.csv", dtype=str)
+df = pd.read_csv("trips.csv")
 
 df.drop(
     columns=[
@@ -40,10 +40,10 @@ zip_code = []
 dob = []
 
 # Get rid of bad 0 values
-df.drop(df.index[df["Pickup_long"] == "0"], inplace=True)
-df.drop(df.index[df["Pickup_lat"] == "0"], inplace=True)
-df.drop(df.index[df["Dropoff_long"] == "0"], inplace=True)
-df.drop(df.index[df["Dropoff_lat"] == "0"], inplace=True)
+df.drop(df.index[df["Pickup_long"] == 0], inplace=True)
+df.drop(df.index[df["Pickup_lat"] == 0], inplace=True)
+df.drop(df.index[df["Dropoff_long"] == 0], inplace=True)
+df.drop(df.index[df["Dropoff_lat"] == 0], inplace=True)
 
 for x in range(0, len(df), 1):
     gender.append(fake.profile(fields=["sex"])["sex"])
@@ -51,16 +51,18 @@ for x in range(0, len(df), 1):
     dob.append(str(fake.date_of_birth(minimum_age=21, maximum_age=65)))
 
 df["Sex"] = gender
-df["Zip"] = zip_code
+# df["Zip"] = zip_code
 df["DOB"] = dob
+
+print(df.head(10))
+df.info()
+
+df.to_csv("passenger-trips.csv", index=False)
+
+exit()
 
 for (columnName, columnData) in df.iteritems():
     print("Colunm Name : ", columnName)
     max_len = len(columnData.values.max())
     print("Max Cell Length : ", max_len)
     df[columnName] = columnData.apply(lambda x: x.ljust(max_len, "*"))
-
-print(df.head(10))
-df.info()
-
-df.to_csv("passenger-trips.csv", index=False)

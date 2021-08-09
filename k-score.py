@@ -1,6 +1,60 @@
 import pandas as pd
 import numpy as np
 
+# master_df = pd.read_csv("passenger-trips.csv", dtype=str)
+master_df = pd.read_csv(
+    "passenger-trips.csv",
+    dtype={"Sex": str, "Zip": str},
+    parse_dates=["Pickup", "Dropoff", "DOB"],
+)
+print(master_df.head(3))
+master_df.info()
+
+print("Master Dataset size = ", len(master_df))
+
+
+def gps_reduce(gps_df):
+    for dp in range(5):
+        gps_reduced = gps_df.round(decimals=dp)
+        yield dp, gps_reduced
+
+
+def create_k_anon_matrix(df, transform, k_anon_values):
+
+    k_anon_matrix = pd.DataFrame({}, columns=k_anon_values)
+    print(k_anon_matrix)
+
+    for row_name, gps_reduced in transform(df):
+        print("\n------------------------\n")
+        print(gps_reduced)
+        frequencies = gps_reduced.value_counts(ascending=True)
+        k_result_values = {}
+
+        for k in k_anon_values:
+            match = frequencies[frequencies >= k].sum()
+            total = frequencies.sum()
+            print(match, " / ", total)
+            result = round(match / total * 100, 2)
+            k_result_values[k] = result
+
+        row = pd.Series(k_result_values)
+        row.name = row_name
+        k_anon_matrix = k_anon_matrix.append(row)
+        print(k_anon_matrix)
+
+    k_anon_matrix.style.set_caption(
+        "K-Anonymity Sensitivity Analysis: x=k, y=data precision"
+    )
+    return k_anon_matrix
+
+
+k_anon_values = [1, 2, 5, 10, 20]
+gps_loc = master_df[["Pickup_long", "Pickup_lat", "Dropoff_long", "Dropoff_lat"]].copy()
+result = create_k_anon_matrix(gps_loc, gps_reduce, k_anon_values)
+print(result)
+
+exit()
+
 df = pd.DataFrame(
     np.random.randint(0, 2, (10, 5)),
     columns=["Pickup_long", "Pickup_lat", "A", "B", "C"],
